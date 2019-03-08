@@ -216,7 +216,7 @@ Out[17]:
 
 我们可以通过`asscalar`函数将结果变换为Python中的标量。下面例子中`X`的L2L2范数结果同上例一样是单元素`NDArray`，但最后结果变换成了Python中的标量。
 
-```
+```python
 In [18]:
 X.norm().asscalar()
 Out[18]:
@@ -231,7 +231,7 @@ Out[18]:
 
 定义两个`NDArray`：
 
-```
+```python
 In [19]:
 A = nd.arange(3).reshape((3, 1))
 B = nd.arange(2).reshape((1, 2))
@@ -248,7 +248,7 @@ Out[19]:
 
 由于`A`和`B`分别是3行1列和1行2列的矩阵，如果要计算`A + B`，那么`A`中第一列的3个元素被广播（复制）到了第二列，而`B`中第一行的2个元素被广播（复制）到了第二行和第三行。如此，就可以对2个3行2列的矩阵按元素相加。
 
-```
+```python
 In [20]:
 A + B
 Out[20]:
@@ -264,7 +264,7 @@ Out[20]:
 
 在下面的例子中，我们指定了`NDArray`的行索引截取范围`[1:3]`。依据左闭右开指定范围的惯例，它截取了矩阵`X`中行索引为1和2的两行。
 
-```
+```python
 In [21]:
 X[1:3]
 Out[21]:
@@ -275,7 +275,7 @@ Out[21]:
 
 我们可以指定`NDArray`中需要访问的单个元素的位置，如矩阵中行和列的索引，并为该元素重新赋值。
 
-```
+```python
 In [22]:
 X[1, 2] = 9
 X
@@ -288,7 +288,7 @@ Out[22]:
 
 当然，我们也可以截取一部分元素，并为它们重新赋值。在下面的例子中，我们为行索引为1的每一列元素重新赋值。
 
-```
+```python
 In [23]:
 X[1:2, :] = 12
 X
@@ -303,7 +303,7 @@ Out[23]:
 
 在前面的例子里我们对每个操作新开内存来存储运算结果。举个例子，即使像`Y = X + Y`这样的运算，我们也会新开内存，然后将`Y`指向新内存。为了演示这一点，我们可以使用Python自带的`id`函数：如果两个实例的ID一致，那么它们所对应的内存地址相同；反之则不同。
 
-```
+```python
 In [24]:
 before = id(Y)
 Y = Y + X
@@ -314,7 +314,7 @@ False
 
 如果想指定结果到特定内存，我们可以使用前面介绍的索引来进行替换操作。在下面的例子中，我们先通过`zeros_like`创建和`Y`形状相同且元素为0的`NDArray`，记为`Z`。接下来，我们把`X + Y`的结果通过`[:]`写进`Z`对应的内存中。
 
-```
+```python
 In [25]:
 Z = Y.zeros_like()
 before = id(Z)
@@ -326,7 +326,7 @@ True
 
 实际上，上例中我们还是为`X + Y`开了临时内存来存储计算结果，再复制到`Z`对应的内存。如果想避免这个临时内存开销，我们可以使用运算符全名函数中的`out`参数。
 
-```
+```python
 In [26]:
 nd.elemwise_add(X, Y, out=Z)
 id(Z) == before
@@ -336,7 +336,7 @@ True
 
 如果`X`的值在之后的程序中不会复用，我们也可以用 `X[:] = X + Y` 或者 `X += Y` 来减少运算的内存开销。
 
-```
+```python
 In [27]:
 before = id(X)
 X += Y
@@ -349,7 +349,7 @@ True
 
 我们可以通过`array`函数和`asnumpy`函数令数据在`NDArray`和NumPy格式之间相互变换。下面将NumPy实例变换成`NDArray`实例。
 
-```
+```python
 In [28]:
 import numpy as np
 
@@ -364,10 +364,29 @@ Out[28]:
 
 再将`NDArray`实例变换成NumPy实例。
 
-```
+```python
 In [29]:
 D.asnumpy()
 Out[29]:
 array([[1., 1., 1.],
        [1., 1., 1.]], dtype=float32)
 ```
+
+### 自动求梯度
+
+```python
+from mxnet import autograd, nd
+# 构造矩阵
+x = nd.arange(4).reshape((4, 1))
+# 申请内存
+x.attach_grad()
+# 调用record函数来要求MXNet记录与求梯度有关的计算
+with autograd.record():
+    y = 2 * nd.dot(x.T, x)
+# 调用backward函数自动求梯度    
+y.backward()
+# 验证梯度
+assert (x.grad - 4 * x).norm().asscalar() == 0
+x.grad
+```
+
